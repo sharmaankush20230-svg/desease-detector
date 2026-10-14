@@ -1,913 +1,940 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AI Plant Disease Detector</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>AI Plant Doctor · Ankush Sharma</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --green-900: #1b3a1b; --green-800: #1f4f1f; --green-700: #2a6b2a;
+    --green-600: #2e7d32; --green-500: #3d9a41; --green-100: #e6f2e6;
+    --green-50: #f0f7f0; --neutral-900: #1a1a1a; --neutral-700: #3a3a3a;
+    --neutral-500: #6a6a6a; --neutral-100: #f5f5f5; --white: #ffffff;
+    --red-600: #c62828; --red-50: #ffebee; --amber-600: #b26a00;
+    --amber-50: #fff4e0; --radius-card: 24px; --radius-pill: 999px;
+    --shadow-card: 0 10px 30px rgba(20, 60, 20, 0.08);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(180deg, #eaf4ea 0%, #f6faf6 100%);
+    color: var(--neutral-900); min-height: 100vh; padding: 12px;
+    display: flex; justify-content: center; align-items: flex-start;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  .app { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px; }
 
-    body {
-      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
-      background: #f0f7f0;
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 12px;
-    }
+  /* ---------- Credit line ---------- */
+  .credit-line {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--green-800);
+    font-weight: 600;
+    padding: 5px 12px;
+    background: var(--green-100);
+    border-radius: var(--radius-pill);
+    align-self: center;
+    letter-spacing: 0.01em;
+  }
 
-    .app-container {
-      max-width: 520px;
-      width: 100%;
-      margin: 0 auto;
-    }
+  /* ---------- Header ---------- */
+  .header { text-align: center; padding: 0 4px; }
+  .header .logo { font-size: 34px; line-height: 1; margin-bottom: 2px; }
+  .header h1 { font-size: 1.35rem; font-weight: 700; color: var(--green-800); letter-spacing: -0.02em; }
+  .header p.tagline { font-size: 0.78rem; color: var(--neutral-500); margin-top: 2px; }
 
-    .card {
-      background: white;
-      border-radius: 32px;
-      padding: 20px 18px;
-      box-shadow: 0 12px 28px rgba(0, 40, 0, 0.08);
-      margin-bottom: 20px;
-      transition: box-shadow 0.2s;
-    }
+  /* ---------- Sliding info card ---------- */
+  .slider-card {
+    background: var(--white);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+  }
+  .slider-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--green-500), var(--green-700));
+    border-radius: 4px 0 0 4px;
+  }
+  .slider-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--green-700);
+    margin-bottom: 6px;
+    padding-left: 8px;
+  }
+  .slider-viewport {
+    position: relative;
+    height: 44px;
+    overflow: hidden;
+    padding-left: 8px;
+  }
+  .slide {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    font-size: 0.88rem;
+    color: var(--neutral-900);
+    line-height: 1.35;
+    opacity: 0;
+    transform: translateY(100%);
+    animation: slideUp 12s infinite;
+  }
+  .slide .icon { font-size: 1.15rem; line-height: 1; flex-shrink: 0; }
+  .slide .text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .slide:nth-child(1) { animation-delay: 0s; }
+  .slide:nth-child(2) { animation-delay: 2.4s; }
+  .slide:nth-child(3) { animation-delay: 4.8s; }
+  .slide:nth-child(4) { animation-delay: 7.2s; }
+  .slide:nth-child(5) { animation-delay: 9.6s; }
 
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
+  @keyframes slideUp {
+    0%      { opacity: 0; transform: translateY(100%); }
+    3%      { opacity: 1; transform: translateY(0); }
+    17%     { opacity: 1; transform: translateY(0); }
+    20%     { opacity: 0; transform: translateY(-100%); }
+    100%    { opacity: 0; transform: translateY(-100%); }
+  }
 
-    .card-header h2 {
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: #1f4f1f;
-      letter-spacing: -0.02em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { animation: none; opacity: 1; transform: none; position: static; }
+    .slider-viewport { height: auto; }
+    .slide:not(:first-child) { display: none; }
+  }
 
-    .leaf-icon {
-      font-size: 1.8rem;
-      line-height: 1;
-    }
+  .slider-dots { display: flex; justify-content: center; gap: 5px; margin-top: 6px; }
+  .slider-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green-100);
+    animation: dotPulse 12s infinite;
+  }
+  .slider-dots span:nth-child(1) { animation-delay: 0s; }
+  .slider-dots span:nth-child(2) { animation-delay: 2.4s; }
+  .slider-dots span:nth-child(3) { animation-delay: 4.8s; }
+  .slider-dots span:nth-child(4) { animation-delay: 7.2s; }
+  .slider-dots span:nth-child(5) { animation-delay: 9.6s; }
 
-    .api-section {
-      background: #e9f3e9;
-      border-radius: 24px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
+  @keyframes dotPulse {
+    0%, 3%       { background: var(--green-600); transform: scale(1.3); }
+    17%, 20%     { background: var(--green-600); transform: scale(1.3); }
+    21%, 100%    { background: var(--green-100); transform: scale(1); }
+  }
 
-    .api-label {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: #2a5a2a;
-      margin-bottom: 8px;
-      display: block;
-    }
+  /* ---------- API key card ---------- */
+  .key-card {
+    background: var(--white);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-card);
+  }
+  .key-card .key-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--green-700);
+    margin-bottom: 8px;
+  }
+  .key-row { display: flex; gap: 8px; align-items: stretch; }
+  .key-row input {
+    flex: 1; min-width: 0; padding: 11px 14px; font-size: 0.85rem;
+    border: 2px solid var(--green-100); border-radius: var(--radius-pill);
+    background: var(--white); color: var(--neutral-900); outline: none;
+    font-family: inherit; transition: border-color 0.15s ease;
+  }
+  .key-row input:focus { border-color: var(--green-500); }
+  .icon-btn {
+    flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%;
+    border: 2px solid var(--green-100); background: var(--white);
+    color: var(--green-700); font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .icon-btn:active { transform: scale(0.94); background: var(--green-50); }
+  .key-hint {
+    font-size: 0.68rem; color: var(--neutral-500); margin-top: 8px;
+    line-height: 1.4; padding-left: 4px;
+  }
+  .key-hint a { color: var(--green-700); font-weight: 600; text-decoration: none; }
+  .key-hint a:hover { text-decoration: underline; }
 
-    .api-input-wrapper {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+  /* ---------- Card (camera + results) ---------- */
+  .card { background: var(--white); border-radius: var(--radius-card); padding: 14px 16px; box-shadow: var(--shadow-card); }
+  .card h2 { font-size: 0.95rem; font-weight: 700; color: var(--green-800); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 
-    .api-input-wrapper input {
-      flex: 1;
-      padding: 14px 16px;
-      border: 2px solid #c8e0c8;
-      border-radius: 40px;
-      font-size: 0.95rem;
-      background: white;
-      outline: none;
-      transition: border 0.2s;
-      font-family: inherit;
-      min-width: 0;
-    }
+  /* ---------- Camera ---------- */
+  .cam-wrap {
+    position: relative; width: 100%; aspect-ratio: 1 / 1;
+    background: #0e1a0e; border-radius: 20px; overflow: hidden;
+    margin-bottom: 10px;
+  }
+  #cameraVideo { width: 100%; height: 100%; object-fit: cover; display: block; background: #0e1a0e; }
+  .cam-overlay {
+    position: absolute; inset: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cam-overlay::before {
+    content: ""; width: 70%; height: 70%;
+    border: 3px dashed rgba(255,255,255,0.5); border-radius: 24px;
+  }
+  .cam-placeholder {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    color: #a0c0a0; font-size: 0.85rem; text-align: center; padding: 16px;
+    background: #0e1a0e;
+  }
+  .cam-placeholder .emoji { font-size: 2.4rem; }
+  .cam-placeholder.hidden { display: none; }
 
-    .api-input-wrapper input:focus {
-      border-color: #2e7d32;
-    }
+  .cam-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .big-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; padding: 12px 8px; border-radius: 16px;
+    border: 2px solid var(--green-100); background: var(--green-50);
+    color: var(--green-800); font-family: inherit; font-weight: 600;
+    font-size: 0.8rem; cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+    text-align: center; user-select: none;
+  }
+  .big-btn .emoji { font-size: 1.3rem; line-height: 1; }
+  .big-btn:active { transform: scale(0.97); background: #dceddc; border-color: var(--green-500); }
+  .big-btn.capture { background: var(--green-600); color: white; border-color: var(--green-600); }
+  .big-btn.capture:active { background: var(--green-700); border-color: var(--green-700); }
+  .big-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .toggle-btn {
-      background: white;
-      border: 2px solid #c8e0c8;
-      border-radius: 40px;
-      width: 52px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.3rem;
-      cursor: pointer;
-      color: #2a5a2a;
-      transition: background 0.2s;
-      flex-shrink: 0;
-      font-family: inherit;
-    }
+  .preview-wrap {
+    display: none; margin-top: 10px; border-radius: 16px; overflow: hidden;
+    border: 2px solid var(--green-100); background: var(--neutral-100);
+  }
+  .preview-wrap.visible { display: block; }
+  .preview-wrap img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: contain; background: #0e1a0e; }
+  .preview-meta {
+    padding: 6px 10px; font-size: 0.7rem; color: var(--neutral-500);
+    background: var(--green-50); border-top: 1px solid var(--green-100);
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .clear-btn {
+    background: transparent; border: none; color: var(--red-600);
+    font-size: 0.72rem; font-weight: 600; cursor: pointer;
+    padding: 3px 8px; border-radius: var(--radius-pill); font-family: inherit;
+  }
+  .clear-btn:active { background: var(--red-50); }
 
-    .toggle-btn:hover {
-      background: #e0f0e0;
-    }
+  /* ---------- Status + Alert ---------- */
+  .status {
+    display: none; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 10px; padding: 10px 14px; background: var(--green-50);
+    border: 1px solid var(--green-100); border-radius: var(--radius-pill);
+    color: var(--green-800); font-size: 0.8rem; font-weight: 600;
+  }
+  .status.visible { display: flex; }
+  .spinner {
+    width: 16px; height: 16px; border: 3px solid rgba(46, 125, 50, 0.2);
+    border-top-color: var(--green-600); border-radius: 50%;
+    animation: spin 0.9s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .alert {
+    display: none; margin-top: 10px; padding: 10px 12px;
+    border-radius: 12px; font-size: 0.8rem; font-weight: 500;
+    line-height: 1.4; align-items: flex-start; gap: 8px;
+  }
+  .alert.visible { display: flex; }
+  .alert.error { background: var(--red-50); border-left: 5px solid var(--red-600); color: #8e1a1a; }
+  .alert.warn { background: var(--amber-50); border-left: 5px solid var(--amber-600); color: #6b3f00; }
+  .alert .alert-icon { flex-shrink: 0; font-size: 0.95rem; line-height: 1.3; }
 
-    .save-key {
-      margin-top: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+  /* ---------- Results ---------- */
+  .results { display: none; }
+  .results.visible { display: block; }
+  .plant-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .plant-name { font-size: 1.2rem; font-weight: 700; color: var(--green-900); line-height: 1.15; }
+  .status-badge {
+    padding: 4px 12px; border-radius: var(--radius-pill);
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  .status-badge.healthy { background: #d4edda; color: #0b5e0b; }
+  .status-badge.diseased { background: #ffe0b0; color: #8a3a00; }
+  .status-badge.unknown { background: var(--neutral-100); color: var(--neutral-700); }
+  .result-block { padding: 10px 0; border-bottom: 1px solid var(--green-100); }
+  .result-block:last-child { border-bottom: none; padding-bottom: 0; }
+  .result-label {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--green-700); margin-bottom: 4px;
+  }
+  .result-value {
+    font-size: 0.9rem; color: var(--neutral-900); line-height: 1.5;
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .result-value.empty { color: var(--neutral-500); font-style: italic; }
+  .cure-card { background: var(--green-50); border-radius: 14px; padding: 10px 12px; margin-top: 6px; }
+  .cure-card .result-label { color: var(--green-800); }
+  .confidence-pill {
+    display: inline-block; margin-left: 6px; padding: 2px 9px;
+    background: var(--green-100); color: var(--green-800);
+    border-radius: var(--radius-pill); font-size: 0.66rem;
+    font-weight: 600; letter-spacing: 0.01em;
+  }
+  .footer { text-align: center; font-size: 0.68rem; color: var(--neutral-500); padding: 2px 12px 0; line-height: 1.5; }
 
-    .save-hint {
-      font-size: 0.75rem;
-      color: #4a6e4a;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 60px;
-      padding: 16px 24px;
-      font-weight: 600;
-      font-size: 1.05rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: inherit;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      letter-spacing: -0.01em;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    }
-
-    .btn-primary {
-      background: #2e7d32;
-      color: white;
-      width: 100%;
-      box-shadow: 0 8px 18px rgba(46, 125, 50, 0.25);
-    }
-
-    .btn-primary:active {
-      transform: scale(0.98);
-      background: #1e5e22;
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.6;
-      transform: none;
-      box-shadow: none;
-      pointer-events: none;
-    }
-
-    .btn-secondary {
-      background: white;
-      color: #2e7d32;
-      border: 2px solid #b8d9b8;
-      padding: 12px 20px;
-    }
-
-    .camera-container {
-      border-radius: 28px;
-      overflow: hidden;
-      background: #0f1f0f;
-      margin-bottom: 16px;
-      position: relative;
-      aspect-ratio: 1 / 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #cameraVideo {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      background: #1a2a1a;
-    }
-
-    .camera-placeholder {
-      color: #a0c0a0;
-      font-size: 0.95rem;
-      text-align: center;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .camera-placeholder span {
-      font-size: 3rem;
-    }
-
-    .capture-row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .capture-row .btn {
-      flex: 1;
-      padding: 16px 12px;
-    }
-
-    .file-upload-label {
-      background: white;
-      border: 2px dashed #b8d9b8;
-      border-radius: 60px;
-      padding: 16px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-weight: 500;
-      color: #2a5a2a;
-      cursor: pointer;
-      flex: 1;
-      font-size: 0.95rem;
-      transition: background 0.2s;
-      text-align: center;
-      font-family: inherit;
-    }
-
-    .file-upload-label:hover {
-      background: #f0faf0;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .preview-section {
-      margin-top: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .preview-label {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: #5a7a5a;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-
-    #previewCanvas {
-      max-width: 100%;
-      border-radius: 24px;
-      background: #e0ede0;
-      border: 2px solid #b8d9b8;
-      max-height: 200px;
-      object-fit: contain;
-    }
-
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      margin: 16px 0;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #d0e8d0;
-      border-top: 4px solid #2e7d32;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .status-text {
-      font-size: 0.95rem;
-      color: #2a5a2a;
-      font-weight: 500;
-      text-align: center;
-    }
-
-    .error-banner {
-      background: #ffebee;
-      border-left: 6px solid #c62828;
-      color: #b71c1c;
-      padding: 14px 16px;
-      border-radius: 18px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin: 16px 0 0 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .diagnostic-card {
-      background: #f7fff7;
-      border-radius: 28px;
-      padding: 20px;
-      border: 2px solid #d0e8d0;
-      margin-top: 16px;
-    }
-
-    .plant-header {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .plant-name {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #1f3f1f;
-      line-height: 1.2;
-    }
-
-    .status-badge {
-      padding: 6px 16px;
-      border-radius: 40px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      letter-spacing: 0.01em;
-      background: #e0f0e0;
-      color: #1f4f1f;
-    }
-
-    .status-badge.healthy {
-      background: #d4edda;
-      color: #0b5e0b;
-    }
-
-    .status-badge.diseased {
-      background: #ffe0b0;
-      color: #a13000;
-    }
-
-    .detail-row {
-      margin-bottom: 14px;
-      border-bottom: 1px solid #e0f0e0;
-      padding-bottom: 12px;
-    }
-
-    .detail-row:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-
-    .detail-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #4a6e4a;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .detail-value {
-      font-size: 1rem;
-      color: #1a2e1a;
-      line-height: 1.45;
-      font-weight: 500;
-    }
-
-    .cure-box {
-      background: #f0faf0;
-      border-radius: 18px;
-      padding: 14px;
-      margin-top: 8px;
-    }
-
-    .cure-box .detail-label {
-      color: #2e7d32;
-    }
-
-    .confidence-pill {
-      display: inline-block;
-      background: #e8f0e8;
-      padding: 4px 12px;
-      border-radius: 30px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #2a5a2a;
-      margin-left: 8px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .small-note {
-      font-size: 0.7rem;
-      color: #6a8a6a;
-      margin-top: 6px;
-    }
-  </style>
+  @media (min-width: 640px) {
+    body { padding: 20px 16px; }
+    .header h1 { font-size: 1.55rem; }
+    .card { padding: 16px 18px; }
+    .key-card { padding: 16px 18px; }
+    .slider-viewport { height: 48px; }
+    .slide { height: 48px; }
+    .preview-wrap img { max-height: 340px; }
+  }
+</style>
 </head>
 <body>
-<div class="app-container">
-  <div class="card">
-    <div class="card-header">
-      <h2><span class="leaf-icon">🌿</span> AI Plant Doctor</h2>
-    </div>
-    <div class="api-section">
-      <label class="api-label" for="apiKeyInput">Google Gemini API Key</label>
-      <div class="api-input-wrapper">
-        <input type="password" id="apiKeyInput" placeholder="API key pre-loaded" autocomplete="off" spellcheck="false">
-        <button class="toggle-btn" id="toggleApiKeyBtn" title="Show/hide key" type="button">👁️</button>
+  <main class="app">
+
+    <div class="credit-line">Created by Ankush Sharma · Class XI A · GBSSS Tukmirpur</div>
+
+    <header class="header">
+      <div class="logo">🌿</div>
+      <h1>AI Plant Doctor</h1>
+      <p class="tagline">Smart crop protection, powered by Google Gemini AI</p>
+    </header>
+
+    <section class="slider-card" aria-labelledby="aboutTitle">
+      <div class="slider-label" id="aboutTitle">About This Software</div>
+
+      <div class="slider-viewport">
+        <div class="slide">
+          <span class="icon">🌾</span>
+          <span class="text">AI Plant Doctor is created to help farmers protect crops from disease before it spreads.</span>
+        </div>
+        <div class="slide">
+          <span class="icon">📷</span>
+          <span class="text">Just snap a photo of a leaf — live camera or gallery — and get an instant diagnosis.</span>
+        </div>
+        <div class="slide">
+          <span class="icon">🔬</span>
+          <span class="text">Powered by Google Gemini AI to identify plant species and detect diseases early.</span>
+        </div>
+        <div class="slide">
+          <span class="icon">🌱</span>
+          <span class="text">Suggests safe organic remedies and, when needed, chemical treatments.</span>
+        </div>
+        <div class="slide">
+          <span class="icon">⚡</span>
+          <span class="text">No login, no setup, no cost — results in seconds, in simple farmer-friendly language.</span>
+        </div>
       </div>
-      <div class="save-key">
-        <span class="save-hint">🔒 Ready to use — no setup needed</span>
-        <button class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;" id="saveKeyBtn" type="button">Save</button>
+
+      <div class="slider-dots" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
-    </div>
-    <div class="small-note">Powered by Google Gemini AI.</div>
-  </div>
+    </section>
 
-  <div class="card">
-    <div class="camera-container" id="cameraContainer">
-      <video id="cameraVideo" autoplay playsinline muted></video>
-      <div class="camera-placeholder" id="cameraPlaceholder">
-        <span>📷</span>
-        <p>Camera preview will appear here</p>
+    <!-- API Key card -->
+    <section class="key-card" aria-labelledby="apiKeyTitle">
+      <div class="key-title" id="apiKeyTitle">🔑 Enter Your Gemini API Key</div>
+      <div class="key-row">
+        <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key"
+          autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button type="button" class="icon-btn" id="toggleKeyBtn" aria-label="Show or hide API key" title="Show / hide key">👁️</button>
       </div>
-    </div>
+      <p class="key-hint">
+        Get a free key at
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.
+        Your key is stored only on this device.
+      </p>
+    </section>
 
-    <div class="capture-row">
-      <button class="btn btn-primary" id="captureBtn" type="button" disabled>📸 Capture &amp; Analyze</button>
-    </div>
-    <div class="capture-row">
-      <label class="file-upload-label" for="fileInput">
-        📁 Upload photo
-      </label>
-      <input type="file" id="fileInput" accept="image/*" capture="environment">
-    </div>
+    <section class="card" aria-labelledby="inputTitle">
+      <h2 id="inputTitle">📷 Capture or Upload a Leaf</h2>
 
-    <div class="preview-section hidden" id="previewSection">
-      <div class="preview-label">Captured leaf</div>
-      <canvas id="previewCanvas" width="300" height="300"></canvas>
-    </div>
+      <div class="cam-wrap">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <div class="cam-placeholder" id="camPlaceholder">
+          <span class="emoji">📷</span>
+          <p>Starting camera…</p>
+        </div>
+        <div class="cam-overlay" id="camOverlay"></div>
+      </div>
 
-    <div class="loading-container hidden" id="loadingContainer">
-      <div class="spinner"></div>
-      <div class="status-text" id="statusText">Scanning leaf structure...</div>
-    </div>
+      <div class="cam-actions">
+        <button type="button" class="big-btn capture" id="captureBtn" disabled>
+          <span class="emoji">📸</span>
+          Capture &amp; Analyze
+        </button>
+        <button type="button" class="big-btn" id="uploadBtn">
+          <span class="emoji">🖼️</span>
+          Upload Image
+        </button>
+      </div>
 
-    <div class="error-banner hidden" id="errorBanner">
-      <span>⚠️</span>
-      <span id="errorMessage">Something went wrong.</span>
-    </div>
-  </div>
+      <input type="file" id="galleryInput" accept="image/*" style="display:none" />
 
-  <div class="card hidden" id="resultCard">
-    <div class="plant-header">
-      <span class="plant-name" id="plantName">—</span>
-      <span class="status-badge" id="statusBadge">—</span>
-    </div>
+      <div class="preview-wrap" id="previewWrap">
+        <img id="previewImg" alt="Selected leaf preview" />
+        <div class="preview-meta">
+          <span id="previewMeta">Ready to analyze</span>
+          <button type="button" class="clear-btn" id="clearBtn">Remove</button>
+        </div>
+      </div>
 
-    <div class="detail-row">
-      <div class="detail-label">Identified Disease</div>
-      <div class="detail-value" id="diseaseName">—</div>
-      <div class="confidence-pill" id="confidencePill">—</div>
-    </div>
+      <div class="status" id="statusBox" role="status" aria-live="polite">
+        <span class="spinner"></span>
+        <span id="statusText">Scanning leaves…</span>
+      </div>
 
-    <div class="detail-row">
-      <div class="detail-label">Visible Symptoms</div>
-      <div class="detail-value" id="symptomsText">—</div>
-    </div>
+      <div class="alert" id="alertBox" role="alert">
+        <span class="alert-icon" id="alertIcon">⚠️</span>
+        <span id="alertText"></span>
+      </div>
+    </section>
 
-    <div class="cure-box">
-      <div class="detail-label">🌱 Organic Treatment</div>
-      <div class="detail-value" id="organicCureText">—</div>
-    </div>
-    <div class="cure-box" style="margin-top: 12px;">
-      <div class="detail-label">🧪 Chemical Treatment</div>
-      <div class="detail-value" id="chemicalCureText">—</div>
-    </div>
-  </div>
-</div>
+    <section class="card results" id="resultsCard" aria-labelledby="resultsTitle">
+      <h2 id="resultsTitle">🩺 Diagnosis Report</h2>
+
+      <div class="plant-head">
+        <span class="plant-name" id="resPlantName">—</span>
+        <span class="status-badge unknown" id="resStatusBadge">—</span>
+      </div>
+
+      <div class="result-block">
+        <div class="result-label">
+          Disease / Pest
+          <span class="confidence-pill" id="resConfidencePill" style="display:none;"></span>
+        </div>
+        <div class="result-value empty" id="resDisease">—</div>
+      </div>
+
+      <div class="result-block">
+        <div class="result-label">Observed Symptoms</div>
+        <div class="result-value empty" id="resSymptoms">—</div>
+      </div>
+
+      <div class="result-block">
+        <div class="result-label">🌱 Organic Treatment</div>
+        <div class="cure-card">
+          <div class="result-value empty" id="resOrganic">—</div>
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div class="result-label">🧪 Chemical Treatment</div>
+        <div class="cure-card">
+          <div class="result-value empty" id="resChemical">—</div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer">
+      Results are AI-generated and may not be 100% accurate. For critical crops, confirm with a local agricultural extension officer.
+    </p>
+  </main>
 
 <script>
-  (function() {
-    'use strict';
+(function () {
+  "use strict";
 
-    // ============================================================
-    // *** PASTE YOUR API KEY BETWEEN THE SINGLE QUOTES BELOW ***
-    // Example: var HARDCODED_API_KEY = 'AIzaSyABC123...';
-    // ============================================================
-    var HARDCODED_API_KEY = '';  // <<< PASTE YOUR API KEY HERE
-    // ============================================================
+  /* =====================================================================
+     🔑  OPTIONAL HARDCODED KEY
+     Leave this as the placeholder if you are hosting publicly (e.g. on a
+     QR-code website) and want each visitor to paste their own key.
+     If you are running the file locally / offline, you may paste your
+     key between the smiley emojis so the input box is pre-filled.
+     ===================================================================== */
+  const GEMINI_API_KEY = "😊😊 YOUR_GEMINI_API_KEY_HERE 😊😊";
 
-    var apiKeyInput = document.getElementById('apiKeyInput');
-    var toggleApiKeyBtn = document.getElementById('toggleApiKeyBtn');
-    var saveKeyBtn = document.getElementById('saveKeyBtn');
-    var cameraVideo = document.getElementById('cameraVideo');
-    var cameraPlaceholder = document.getElementById('cameraPlaceholder');
-    var captureBtn = document.getElementById('captureBtn');
-    var fileInput = document.getElementById('fileInput');
-    var previewSection = document.getElementById('previewSection');
-    var previewCanvas = document.getElementById('previewCanvas');
-    var loadingContainer = document.getElementById('loadingContainer');
-    var statusText = document.getElementById('statusText');
-    var errorBanner = document.getElementById('errorBanner');
-    var errorMessage = document.getElementById('errorMessage');
-    var resultCard = document.getElementById('resultCard');
-    var plantNameEl = document.getElementById('plantName');
-    var statusBadge = document.getElementById('statusBadge');
-    var diseaseNameEl = document.getElementById('diseaseName');
-    var confidencePill = document.getElementById('confidencePill');
-    var symptomsTextEl = document.getElementById('symptomsText');
-    var organicCureTextEl = document.getElementById('organicCureText');
-    var chemicalCureTextEl = document.getElementById('chemicalCureText');
+  const MODEL_ID = "gemini-3.5-flash-lite";
+  const API_URL =
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    MODEL_ID +
+    ":generateContent?key=";
 
-    var videoStream = null;
-    var isProcessing = false;
+  const STORAGE_KEY = "gemini_api_key";
+  const MAX_DIMENSION = 1280;
 
-    function loadApiKey() {
-      var saved = null;
-      try {
-        saved = localStorage.getItem('gemini_api_key');
-      } catch (e) {
-        console.warn('Could not read localStorage:', e);
-      }
-      if (HARDCODED_API_KEY && HARDCODED_API_KEY.length > 10) {
-        apiKeyInput.value = HARDCODED_API_KEY;
-      } else if (saved) {
-        apiKeyInput.value = saved;
-      }
+  const $ = (id) => document.getElementById(id);
+
+  const apiKeyInput   = $("apiKeyInput");
+  const toggleKeyBtn  = $("toggleKeyBtn");
+  const cameraVideo   = $("cameraVideo");
+  const camPlaceholder= $("camPlaceholder");
+  const camOverlay    = $("camOverlay");
+  const captureBtn    = $("captureBtn");
+  const uploadBtn     = $("uploadBtn");
+  const galleryInput  = $("galleryInput");
+  const previewWrap   = $("previewWrap");
+  const previewImg    = $("previewImg");
+  const previewMeta   = $("previewMeta");
+  const clearBtn      = $("clearBtn");
+  const statusBox     = $("statusBox");
+  const statusText    = $("statusText");
+  const alertBox      = $("alertBox");
+  const alertIcon     = $("alertIcon");
+  const alertText     = $("alertText");
+  const resultsCard   = $("resultsCard");
+  const resPlantName  = $("resPlantName");
+  const resStatusBadge= $("resStatusBadge");
+  const resDisease    = $("resDisease");
+  const resSymptoms   = $("resSymptoms");
+  const resOrganic    = $("resOrganic");
+  const resChemical   = $("resChemical");
+  const resConfidence = $("resConfidencePill");
+
+  let videoStream = null;
+  let currentImageBase64 = null;
+  let currentMimeType = "image/jpeg";
+  let isAnalyzing = false;
+
+  /* ---------- API key management (input → localStorage → hardcoded) ---------- */
+  function getApiKey() {
+    const fromInput = (apiKeyInput.value || "").trim();
+    if (fromInput && fromInput.length > 10) return fromInput;
+
+    let saved = "";
+    try { saved = (localStorage.getItem(STORAGE_KEY) || "").trim(); } catch (e) {}
+    if (saved && saved.length > 10) return saved;
+
+    if (
+      GEMINI_API_KEY &&
+      GEMINI_API_KEY.indexOf("YOUR_GEMINI_API_KEY_HERE") === -1 &&
+      GEMINI_API_KEY.length > 20
+    ) {
+      return GEMINI_API_KEY.trim();
     }
+    return "";
+  }
 
-    function saveApiKey() {
-      var key = apiKeyInput.value.trim();
-      try {
-        if (key) {
-          localStorage.setItem('gemini_api_key', key);
-          showTemporaryMessage('API key saved');
-        } else {
-          localStorage.removeItem('gemini_api_key');
-          showTemporaryMessage('API key cleared');
-        }
-      } catch (e) {
-        console.warn('Could not save API key:', e);
-      }
+  function persistApiKey() {
+    const value = (apiKeyInput.value || "").trim();
+    try {
+      if (value) localStorage.setItem(STORAGE_KEY, value);
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+  }
+
+  (function hydrateApiKey() {
+    let saved = "";
+    try { saved = localStorage.getItem(STORAGE_KEY) || ""; } catch (e) {}
+    if (saved) {
+      apiKeyInput.value = saved;
+    } else if (
+      GEMINI_API_KEY &&
+      GEMINI_API_KEY.indexOf("YOUR_GEMINI_API_KEY_HERE") === -1 &&
+      GEMINI_API_KEY.length > 20
+    ) {
+      apiKeyInput.value = GEMINI_API_KEY.trim();
     }
-
-    function showTemporaryMessage(msg) {
-      if (!loadingContainer.classList.contains('hidden')) return;
-      errorBanner.classList.remove('hidden');
-      errorBanner.style.background = '#d4edda';
-      errorBanner.style.borderLeftColor = '#2e7d32';
-      errorMessage.textContent = msg;
-      errorMessage.style.color = '#0b5e0b';
-      setTimeout(function() {
-        errorBanner.classList.add('hidden');
-        errorBanner.style.background = '';
-        errorBanner.style.borderLeftColor = '#c62828';
-        errorMessage.style.color = '';
-      }, 1800);
-    }
-
-    toggleApiKeyBtn.addEventListener('click', function() {
-      var type = apiKeyInput.type === 'password' ? 'text' : 'password';
-      apiKeyInput.type = type;
-      toggleApiKeyBtn.textContent = type === 'password' ? '👁️' : '🙈';
-    });
-
-    saveKeyBtn.addEventListener('click', saveApiKey);
-
-    function startCamera() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        cameraVideo.style.display = 'none';
-        cameraPlaceholder.style.display = 'flex';
-        cameraPlaceholder.innerHTML = '<span>📷</span><p>Camera not supported. Use upload instead.</p>';
-        captureBtn.disabled = true;
-        return;
-      }
-
-      if (videoStream) {
-        videoStream.getTracks().forEach(function(track) { track.stop(); });
-        videoStream = null;
-      }
-
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } },
-        audio: false
-      }).then(function(stream) {
-        videoStream = stream;
-        cameraVideo.srcObject = stream;
-        cameraVideo.style.display = 'block';
-        cameraPlaceholder.style.display = 'none';
-        captureBtn.disabled = false;
-      }).catch(function(err) {
-        console.warn('Camera error:', err);
-        cameraVideo.style.display = 'none';
-        cameraPlaceholder.style.display = 'flex';
-        cameraPlaceholder.innerHTML = '<span>📷</span><p>Camera not available. Use upload instead.</p>';
-        captureBtn.disabled = true;
-      });
-    }
-
-    window.addEventListener('load', function() {
-      loadApiKey();
-      startCamera();
-    });
-
-    window.addEventListener('beforeunload', function() {
-      if (videoStream) {
-        videoStream.getTracks().forEach(function(track) { track.stop(); });
-      }
-    });
-
-    cameraVideo.addEventListener('loadedmetadata', function() {
-      cameraVideo.play().catch(function(e) { console.warn('Video play error:', e); });
-    });
-
-    function captureFromVideo() {
-      if (!videoStream || !cameraVideo.videoWidth) return null;
-      var video = cameraVideo;
-      var canvas = document.createElement('canvas');
-      var size = Math.min(video.videoWidth, video.videoHeight);
-      canvas.width = size;
-      canvas.height = size;
-      var ctx = canvas.getContext('2d');
-      var offsetX = (video.videoWidth - size) / 2;
-      var offsetY = (video.videoHeight - size) / 2;
-      ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size);
-      return canvas;
-    }
-
-    function showPreviewFromCanvas(sourceCanvas) {
-      var ctx = previewCanvas.getContext('2d');
-      previewCanvas.width = sourceCanvas.width;
-      previewCanvas.height = sourceCanvas.height;
-      ctx.drawImage(sourceCanvas, 0, 0);
-      previewSection.classList.remove('hidden');
-    }
-
-    function showPreviewFromImage(img) {
-      var canvas = document.createElement('canvas');
-      var maxDim = 640;
-      var width = img.width;
-      var height = img.height;
-      if (width > height && width > maxDim) {
-        height = (height * maxDim) / width;
-        width = maxDim;
-      } else if (height > maxDim) {
-        width = (width * maxDim) / height;
-        height = maxDim;
-      }
-      canvas.width = width;
-      canvas.height = height;
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      showPreviewFromCanvas(canvas);
-      return canvas;
-    }
-
-    function canvasToBase64Jpeg(canvas) {
-      var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      return dataUrl.split(',')[1];
-    }
-
-    function setLoading(active, message) {
-      if (active) {
-        loadingContainer.classList.remove('hidden');
-        statusText.textContent = message || 'Scanning leaf structure...';
-        captureBtn.disabled = true;
-      } else {
-        loadingContainer.classList.add('hidden');
-        captureBtn.disabled = false;
-      }
-    }
-
-    function showError(msg) {
-      errorBanner.classList.remove('hidden');
-      errorMessage.textContent = msg;
-      errorBanner.style.background = '#ffebee';
-      errorBanner.style.borderLeftColor = '#c62828';
-      errorMessage.style.color = '#b71c1c';
-    }
-
-    function clearError() {
-      errorBanner.classList.add('hidden');
-    }
-
-    function hideResult() {
-      resultCard.classList.add('hidden');
-    }
-
-    function extractJsonFromResponse(text) {
-      var cleaned = text.trim();
-      var codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
-      if (codeBlockMatch) {
-        cleaned = codeBlockMatch[1].trim();
-      }
-      var firstBrace = cleaned.indexOf('{');
-      var lastBrace = cleaned.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        cleaned = cleaned.slice(firstBrace, lastBrace + 1);
-      }
-      try {
-        return JSON.parse(cleaned);
-      } catch (e) {
-        console.warn('JSON parse error:', e);
-        return null;
-      }
-    }
-
-    function analyzeImage(canvas) {
-      clearError();
-      hideResult();
-
-      var apiKey = apiKeyInput.value.trim();
-      if (!apiKey) {
-        showError('API key missing. Please enter one above.');
-        return Promise.resolve();
-      }
-
-      if (!canvas) {
-        showError('No image captured. Please try again.');
-        return Promise.resolve();
-      }
-
-      var base64Data = canvasToBase64Jpeg(canvas);
-      if (!base64Data || base64Data.length < 100) {
-        showError('Failed to process image. Please try again.');
-        return Promise.resolve();
-      }
-
-      setLoading(true, 'Scanning leaf structure...');
-
-      var statusMessages = [
-        'Scanning leaf structure...',
-        'Consulting AI model...',
-        'Diagnosing plant health...',
-        'Generating recommendations...'
-      ];
-      var statusIndex = 0;
-      var statusInterval = setInterval(function() {
-        if (statusIndex < statusMessages.length - 1) {
-          statusIndex++;
-          statusText.textContent = statusMessages[statusIndex];
-        }
-      }, 1200);
-
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=' + encodeURIComponent(apiKey);
-
-      var payload = {
-        contents: [{
-          parts: [
-            {
-              text: "You are an agricultural plant pathologist. Analyze this leaf image. Respond in clean JSON with these keys: plant_name, health_status ('Healthy' or 'Diseased'), disease_name, confidence_level, symptoms, organic_cure, chemical_cure. Keep explanations concise and actionable."
-            },
-            {
-              inlineData: {
-                mimeType: "image/jpeg",
-                data: base64Data
-              }
-            }
-          ]
-        }]
-      };
-
-      return fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function(response) {
-        clearInterval(statusInterval);
-
-        if (!response.ok) {
-          return response.text().then(function(errText) {
-            var errorDetail = '';
-            try {
-              var errJson = JSON.parse(errText);
-              errorDetail = (errJson && errJson.error && errJson.error.message) ? errJson.error.message : errText;
-            } catch (e) {
-              errorDetail = errText || response.statusText;
-            }
-            throw new Error('API error (' + response.status + '): ' + (errorDetail || 'Request failed'));
-          });
-        }
-
-        return response.json();
-      }).then(function(data) {
-        var responseText = '';
-        if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-          var parts = data.candidates[0].content.parts;
-          for (var i = 0; i < parts.length; i++) {
-            if (parts[i].text) {
-              responseText += parts[i].text;
-            }
-          }
-        }
-
-        if (!responseText) {
-          throw new Error('No valid response from AI model.');
-        }
-
-        var parsed = extractJsonFromResponse(responseText);
-        if (!parsed) {
-          throw new Error('Could not parse diagnosis. Please try again.');
-        }
-
-        displayDiagnosis(parsed);
-      }).catch(function(error) {
-        console.error('Analysis error:', error);
-        showError(error.message || 'Failed to analyze image. Check your API key and connection.');
-      }).then(function() {
-        clearInterval(statusInterval);
-        setLoading(false);
-      });
-    }
-
-    function displayDiagnosis(data) {
-      var plantName = data.plant_name || 'Unknown plant';
-      var healthStatus = data.health_status || 'Unknown';
-      var diseaseName = data.disease_name || 'None detected';
-      var confidence = data.confidence_level || '';
-      var symptoms = data.symptoms || 'No symptoms described.';
-      var organicCure = data.organic_cure || 'No organic treatment suggested.';
-      var chemicalCure = data.chemical_cure || 'No chemical treatment suggested.';
-
-      plantNameEl.textContent = plantName;
-
-      var isHealthy = healthStatus.toLowerCase().indexOf('healthy') !== -1;
-      statusBadge.textContent = healthStatus;
-      statusBadge.className = 'status-badge ' + (isHealthy ? 'healthy' : 'diseased');
-
-      diseaseNameEl.textContent = diseaseName;
-
-      if (confidence) {
-        confidencePill.textContent = 'Confidence: ' + confidence;
-        confidencePill.classList.remove('hidden');
-      } else {
-        confidencePill.textContent = '';
-        confidencePill.classList.add('hidden');
-      }
-
-      symptomsTextEl.textContent = symptoms;
-      organicCureTextEl.textContent = organicCure;
-      chemicalCureTextEl.textContent = chemicalCure;
-
-      resultCard.classList.remove('hidden');
-    }
-
-    captureBtn.addEventListener('click', function() {
-      if (isProcessing) return;
-      isProcessing = true;
-      var canvas = captureFromVideo();
-      if (!canvas) {
-        showError('Camera not ready. Please allow camera access or upload a photo.');
-        isProcessing = false;
-        return;
-      }
-      showPreviewFromCanvas(canvas);
-      analyzeImage(canvas).then(function() {
-        isProcessing = false;
-      });
-    });
-
-    fileInput.addEventListener('change', function(e) {
-      var file = e.target.files[0];
-      if (!file) return;
-
-      if (!file.type.startsWith('image/')) {
-        showError('Please select an image file.');
-        return;
-      }
-
-      var reader = new FileReader();
-      reader.onload = function(event) {
-        var img = new Image();
-        img.onload = function() {
-          var canvas = showPreviewFromImage(img);
-          fileInput.value = '';
-          analyzeImage(canvas);
-        };
-        img.onerror = function() {
-          showError('Failed to load image. Try another file.');
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
   })();
+
+  toggleKeyBtn.addEventListener("click", function () {
+    const isPassword = apiKeyInput.type === "password";
+    apiKeyInput.type = isPassword ? "text" : "password";
+    toggleKeyBtn.textContent = isPassword ? "🙈" : "👁️";
+  });
+  apiKeyInput.addEventListener("change", persistApiKey);
+  apiKeyInput.addEventListener("blur", persistApiKey);
+
+  /* ---------- Alert + status ---------- */
+  function showAlert(message, kind) {
+    alertBox.classList.remove("error", "warn");
+    alertBox.classList.add(kind === "warn" ? "warn" : "error");
+    alertBox.classList.add("visible");
+    alertIcon.textContent = kind === "warn" ? "⚠️" : "⛔";
+    alertText.textContent = message;
+  }
+  function hideAlert() { alertBox.classList.remove("visible"); }
+  function setStatus(message) {
+    if (message) {
+      statusText.textContent = message;
+      statusBox.classList.add("visible");
+    } else {
+      statusBox.classList.remove("visible");
+    }
+  }
+
+  /* ---------- Camera ---------- */
+  async function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      camPlaceholder.innerHTML = '<span class="emoji">📷</span><p>Camera not supported. Use Upload Image below.</p>';
+      camPlaceholder.classList.remove("hidden");
+      camOverlay.style.display = "none";
+      captureBtn.disabled = true;
+      return;
+    }
+
+    if (videoStream) {
+      videoStream.getTracks().forEach(function (t) { t.stop(); });
+      videoStream = null;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 1280 }
+        },
+        audio: false
+      });
+      videoStream = stream;
+      cameraVideo.srcObject = stream;
+      cameraVideo.style.display = "block";
+
+      await new Promise(function (resolve) {
+        if (cameraVideo.readyState >= 1) return resolve();
+        cameraVideo.onloadedmetadata = function () { resolve(); };
+      });
+
+      try { await cameraVideo.play(); } catch (e) {}
+
+      camPlaceholder.classList.add("hidden");
+      camOverlay.style.display = "flex";
+      captureBtn.disabled = false;
+    } catch (err) {
+      console.warn("Camera error:", err);
+      let msg = "Camera could not be opened. Use Upload Image below.";
+      if (err && err.name === "NotAllowedError") {
+        msg = "Camera permission denied. Allow access in browser settings and reload.";
+      } else if (err && err.name === "NotFoundError") {
+        msg = "No camera found. Use Upload Image below.";
+      } else if (err && err.name === "NotReadableError") {
+        msg = "Camera in use by another app. Close it and reload.";
+      } else if (location.protocol === "file:") {
+        msg = "Camera needs HTTPS or localhost. Use Upload Image below.";
+      }
+      camPlaceholder.innerHTML = '<span class="emoji">📷</span><p>' + msg + '</p>';
+      camPlaceholder.classList.remove("hidden");
+      camOverlay.style.display = "none";
+      captureBtn.disabled = true;
+    }
+  }
+
+  window.addEventListener("load", startCamera);
+  window.addEventListener("beforeunload", function () {
+    if (videoStream) videoStream.getTracks().forEach(function (t) { t.stop(); });
+  });
+  cameraVideo.addEventListener("loadedmetadata", function () {
+    cameraVideo.play().catch(function () {});
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && videoStream) {
+      cameraVideo.play().catch(function () {});
+    }
+  });
+
+  /* ---------- Capture ---------- */
+  captureBtn.addEventListener("click", function () {
+    if (!videoStream || !cameraVideo.videoWidth) {
+      showAlert("Camera not ready yet. Please wait a moment.", "warn");
+      return;
+    }
+    const vw = cameraVideo.videoWidth;
+    const vh = cameraVideo.videoHeight;
+    const size = Math.min(vw, vh);
+    const sx = (vw - size) / 2;
+    const sy = (vh - size) / 2;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(cameraVideo, sx, sy, size, size, 0, 0, size, size);
+
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+    currentMimeType = "image/jpeg";
+    currentImageBase64 = dataUrl.split(",")[1] || null;
+
+    previewImg.src = dataUrl;
+    previewWrap.classList.add("visible");
+    previewMeta.textContent = "Captured · " + size + "×" + size + " px";
+    resultsCard.classList.remove("visible");
+    hideAlert();
+
+    analyze();
+  });
+
+  /* ---------- Upload ---------- */
+  uploadBtn.addEventListener("click", function () { galleryInput.click(); });
+  galleryInput.addEventListener("change", handleFileChosen);
+
+  function handleFileChosen(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type || file.type.indexOf("image/") !== 0) {
+      showAlert("That file is not a supported image. Please choose a JPG, PNG, or WEBP photo.", "error");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      showAlert("Image is too large (over 15 MB). Please choose a smaller photo.", "error");
+      return;
+    }
+    hideAlert();
+    processImageFile(file);
+  }
+
+  function processImageFile(file) {
+    const reader = new FileReader();
+    reader.onerror = function () {
+      showAlert("Could not read that file. Please try a different image.", "error");
+    };
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onerror = function () {
+        showAlert("That image appears to be corrupted or unsupported.", "error");
+      };
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+
+        if (width > height && width > MAX_DIMENSION) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else if (height > MAX_DIMENSION) {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+
+        currentMimeType = "image/jpeg";
+        currentImageBase64 = dataUrl.split(",")[1] || null;
+
+        previewImg.src = dataUrl;
+        previewWrap.classList.add("visible");
+        previewMeta.textContent = "Image ready · " + width + "×" + height + " px";
+        resultsCard.classList.remove("visible");
+        hideAlert();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  clearBtn.addEventListener("click", function () {
+    currentImageBase64 = null;
+    previewImg.removeAttribute("src");
+    previewWrap.classList.remove("visible");
+    previewMeta.textContent = "Ready to analyze";
+    resultsCard.classList.remove("visible");
+    hideAlert();
+    setStatus("");
+  });
+
+  /* ---------- JSON + rendering ---------- */
+  function extractJson(text) {
+    if (!text) return null;
+    let cleaned = String(text).trim();
+    const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenceMatch) cleaned = fenceMatch[1].trim();
+    const first = cleaned.indexOf("{");
+    const last = cleaned.lastIndexOf("}");
+    if (first !== -1 && last !== -1 && last > first) {
+      cleaned = cleaned.slice(first, last + 1);
+    }
+    try { return JSON.parse(cleaned); } catch (e) { return null; }
+  }
+
+  function setResultText(el, value, fallback) {
+    const text = (value === null || value === undefined || String(value).trim() === "")
+      ? fallback
+      : String(value).trim();
+    el.textContent = text;
+    if (text === fallback) el.classList.add("empty");
+    else el.classList.remove("empty");
+  }
+
+  function renderResults(data) {
+    const plantName = data.plant_name || data.plantName || "Unknown plant";
+    const status = (data.health_status || data.healthStatus || "Unknown").trim();
+    const disease = data.disease_name || data.diseaseName || "";
+    const confidence = data.confidence_level || data.confidenceLevel || "";
+    const symptoms = data.symptoms || "";
+    const organic = data.organic_cure || data.organicCure || data.organic_treatment || "";
+    const chemical = data.chemical_cure || data.chemicalCure || data.chemical_treatment || "";
+
+    resPlantName.textContent = plantName;
+
+    const lower = status.toLowerCase();
+    resStatusBadge.classList.remove("healthy", "diseased", "unknown");
+    if (lower.indexOf("healthy") !== -1 && lower.indexOf("diseased") === -1) {
+      resStatusBadge.classList.add("healthy");
+      resStatusBadge.textContent = "Healthy";
+    } else if (lower.indexOf("diseas") !== -1 || lower.indexOf("infect") !== -1 || lower.indexOf("pest") !== -1) {
+      resStatusBadge.classList.add("diseased");
+      resStatusBadge.textContent = status || "Diseased";
+    } else {
+      resStatusBadge.classList.add("unknown");
+      resStatusBadge.textContent = status || "Unknown";
+    }
+
+    setResultText(resDisease, disease, "None detected");
+    setResultText(resSymptoms, symptoms, "No symptoms described.");
+    setResultText(resOrganic, organic, "No organic treatment suggested.");
+    setResultText(resChemical, chemical, "No chemical treatment suggested.");
+
+    if (confidence) {
+      resConfidence.style.display = "inline-block";
+      resConfidence.textContent = "Confidence: " + confidence;
+    } else {
+      resConfidence.style.display = "none";
+      resConfidence.textContent = "";
+    }
+
+    resultsCard.classList.add("visible");
+    try { resultsCard.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+  }
+
+  /* ---------- Analyze ---------- */
+  async function analyze() {
+    if (isAnalyzing) return;
+    hideAlert();
+
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      showAlert("Please enter your Gemini API key in the field above, then try again.", "warn");
+      apiKeyInput.focus();
+      try { apiKeyInput.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+      return;
+    }
+    if (!currentImageBase64) {
+      showAlert("Please capture or upload a photo of a leaf first.", "warn");
+      return;
+    }
+
+    isAnalyzing = true;
+    captureBtn.disabled = true;
+    resultsCard.classList.remove("visible");
+
+    const steps = ["Scanning leaves…", "Analyzing pathology…", "Consulting Gemini AI…", "Preparing recommendations…"];
+    let stepIndex = 0;
+    setStatus(steps[0]);
+    const stepTimer = setInterval(function () {
+      stepIndex = (stepIndex + 1) % steps.length;
+      setStatus(steps[stepIndex]);
+    }, 1400);
+
+    const prompt =
+      "You are an expert agricultural plant pathologist. Analyze the leaf image provided. " +
+      "Identify the plant species, determine whether it is healthy or diseased, name the specific " +
+      "disease or pest if present, describe the visible symptoms, and provide actionable organic " +
+      "and chemical treatment or care recommendations. " +
+      "Respond with ONLY a single valid JSON object (no markdown, no code fences, no extra text) " +
+      "using exactly these keys: " +
+      "plant_name, health_status, disease_name, confidence_level, symptoms, organic_cure, chemical_cure. " +
+      "Use short, clear, farmer-friendly sentences.";
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: currentMimeType, data: currentImageBase64 } }
+          ]
+        }
+      ]
+    };
+
+    try {
+      const response = await fetch(API_URL + encodeURIComponent(apiKey), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        let detail = "";
+        try {
+          const errJson = await response.json();
+          if (errJson && errJson.error && errJson.error.message) detail = errJson.error.message;
+          else detail = JSON.stringify(errJson);
+        } catch (e) {
+          try { detail = await response.text(); } catch (e2) { detail = ""; }
+        }
+
+        let userMsg = "Gemini API error (HTTP " + response.status + ").";
+        if (response.status === 400) {
+          userMsg = "Bad request — check your API key or model name. " + (detail ? "Details: " + detail : "");
+        } else if (response.status === 401 || response.status === 403) {
+          userMsg = "API key rejected (HTTP " + response.status + "). Double-check the key. " + (detail ? "Details: " + detail : "");
+        } else if (response.status === 404) {
+          userMsg = "Model '" + MODEL_ID + "' not found. Try 'gemini-2.5-flash' in the MODEL_ID line. " + (detail ? "Details: " + detail : "");
+        } else if (response.status === 429) {
+          userMsg = "Rate limit hit (429). Please wait a minute and retry. " + (detail ? "Details: " + detail : "");
+        } else if (response.status === 503) {
+          userMsg = "Gemini servers are busy (503). Try again in a few moments.";
+        } else if (response.status >= 500) {
+          userMsg = "Gemini service temporarily unavailable (HTTP " + response.status + "). Please retry.";
+        }
+        throw new Error(userMsg);
+      }
+
+      const json = await response.json();
+
+      let modelText = "";
+      if (
+        json && Array.isArray(json.candidates) && json.candidates[0] &&
+        json.candidates[0].content && Array.isArray(json.candidates[0].content.parts)
+      ) {
+        for (const part of json.candidates[0].content.parts) {
+          if (typeof part.text === "string") modelText += part.text;
+        }
+      }
+
+      if (!modelText.trim()) {
+        const blockReason =
+          (json && json.promptFeedback && json.promptFeedback.blockReason) ||
+          (json && json.candidates && json.candidates[0] && json.candidates[0].finishReason) ||
+          "";
+        throw new Error(
+          "Gemini returned an empty response" +
+          (blockReason ? " (reason: " + blockReason + ")." : ".") +
+          " Try a clearer photo of a single leaf."
+        );
+      }
+
+      const parsed = extractJson(modelText);
+      if (!parsed) {
+        throw new Error("Could not parse AI response as JSON. Try again.");
+      }
+
+      renderResults(parsed);
+    } catch (err) {
+      console.error("Analysis failed:", err);
+      const msg = (err && err.message) ? err.message : "Something went wrong while contacting Gemini.";
+      showAlert(msg, "error");
+    } finally {
+      clearInterval(stepTimer);
+      setStatus("");
+      isAnalyzing = false;
+      captureBtn.disabled = !videoStream;
+    }
+  }
+})();
 </script>
 </body>
 </html>
